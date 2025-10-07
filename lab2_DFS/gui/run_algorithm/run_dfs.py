@@ -20,29 +20,37 @@ def run_dfs(self):
         return
 
     last = None
-    for step in dfs(graph_data, start, goal, self.order.get()):
-        path, path_edges, visited_edges, stack_nodes = step
-        last = (path, path_edges, visited_edges, stack_nodes)
-        draw_graph(self, path, path_edges, visited_edges, stack_nodes)
-        self.update()
-        time.sleep(0.23)
+    try:
+        for step in dfs(graph_data, start, goal, self.order.get()):
+            if len(step) == 5:
+                path, path_edges, visited_edges, stack_nodes, visited = step
+                last = (path, path_edges, visited_edges, stack_nodes, visited)
+            else:
+                path, path_edges, visited_edges, stack_nodes = step
+                last = (path, path_edges, visited_edges, stack_nodes, None)
+
+            draw_graph(self, path, path_edges, visited_edges, stack_nodes)
+            self.update()
+            time.sleep(0.23)
+
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred: {str(e)}")
+        return
 
     if last:
-        path, path_edges, visited_edges, stack_nodes = last
-        visited_nodes = set()
-        for edge in visited_edges:
-            if isinstance(edge, (list, tuple)):
-                visited_nodes.update(edge)
-            else:
-                visited_nodes.add(edge)
-
+        path, path_edges, visited_edges, stack_nodes, visited = last
         if path:
+            visited_count = len(visited) if visited is not None else len(set().union(*[set(edge) for edge in visited_edges]))
             messagebox.showinfo("Result",
                               f"Path found: {' → '.join(map(str, path))}\n"
-                              f"Visited nodes: {len(visited_nodes)}")
+                              f"Visited nodes: {visited_count}"
+                              f"\nPath length: {len(path)} nodes"
+                              f"\nSearch efficiency: {len(path)}/{visited_count} "
+                              f"= {len(path)/visited_count*100:.1f}%")
             draw_graph(self, path, path_edges, visited_edges, stack_nodes)
         else:
+            visited_count = len(visited) if visited is not None else len(set().union(*[set(edge) for edge in visited_edges]))
             messagebox.showwarning("Result",
-                                 f"No path found.\n"
-                                 f"Visited nodes: {len(visited_nodes)}")
+                               f"No path found.\n"
+                               f"Visited nodes: {visited_count}")
             draw_graph(self, [], [], visited_edges, stack_nodes)

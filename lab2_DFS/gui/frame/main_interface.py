@@ -40,7 +40,7 @@ def build_interface(app):
 
     tk.Button(frame, text="Run Search", command=lambda: run_search(app)).pack(fill="x", pady=5)
 
-    node_ops = tk.LabelFrame(frame, text="Node Ops")
+    node_ops = tk.LabelFrame(frame, text="Edit graph", labelanchor='n')
     node_ops.pack(fill="x", pady=10)
 
     tk.Label(node_ops, text="Add node at x,y:").pack(fill="x", anchor="w", pady=2)
@@ -54,7 +54,7 @@ def build_interface(app):
     tk.Entry(addNode_row, textvariable=app.y_var, width=5).pack(side="left", padx=2)
     tk.Button(addNode_row, text="+", command=lambda: add_node(app)).pack(side="left", padx=2)
 
-    tk.Label(node_ops, text="Remove node:").pack(fill="x", anchor="w", pady=2)
+    tk.Label(node_ops, text="Remove node (by name):").pack(fill="x", anchor="w", pady=2)
 
     removeNode_row = tk.Frame(node_ops)
     removeNode_row.pack(anchor="center", pady=2)
@@ -63,7 +63,7 @@ def build_interface(app):
     tk.Entry(removeNode_row, textvariable=app.del_node_var, width=5).pack(side="left", pady=2)
     tk.Button(removeNode_row, text="-", command=lambda: remove_node(app)).pack(side="left", pady=2)
 
-    tk.Label(node_ops, text="Add edge (u,v):").pack(fill="x", anchor="w", pady=2)
+    tk.Label(node_ops, text="Add edge (node 1, node 2):").pack(fill="x", anchor="w", pady=2)
 
     addEdge_row = tk.Frame(node_ops)
     addEdge_row.pack(anchor="center", pady=2)
@@ -74,7 +74,7 @@ def build_interface(app):
     tk.Entry(addEdge_row, textvariable=app.edge_v, width=5).pack(side="left", pady=2)
     tk.Button(addEdge_row, text="~", command=lambda: add_edge(app)).pack(side="left", pady=2)
 
-    tk.Label(node_ops, text="Remove edge (u,v):").pack(fill="x", anchor="w", pady=2)
+    tk.Label(node_ops, text="Remove edge (node 1, node 2):").pack(fill="x", anchor="w", pady=2)
 
     delEdge_row = tk.Frame(node_ops)
     delEdge_row.pack(anchor="center", pady=2)
