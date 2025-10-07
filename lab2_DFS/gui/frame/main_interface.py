@@ -5,7 +5,8 @@ from lab2_DFS.gui.edit.edit import add_node, remove_node, add_edge, remove_edge
 from lab2_DFS.gui.run_algorithm.run_bfs import run_bfs
 from lab2_DFS.gui.run_algorithm.run_dfs import run_dfs
 from lab2_DFS.logic.graphs.init_graphs import on_graph_type_change
-
+from lab2_DFS.gui.edit.discard_changes import clean_view, restore_default
+from lab2_DFS.gui.edit.swap_nodes import swap_nodes
 
 def run_search(app):
     if app.algorithm.get() == "DFS":
@@ -30,6 +31,8 @@ def build_interface(app):
     tk.Label(frame, text="Goal node:").pack(anchor="w")
     tk.Entry(frame, textvariable=app.goal_node).pack(fill="x")
 
+    tk.Button(frame, text='Swap nodes', command=lambda: swap_nodes(app)).pack(fill="x", pady=2)
+
     tk.Label(frame, text="Algorithm:").pack(anchor="w")
     ttk.Combobox(frame, textvariable=app.algorithm,
                  values=["DFS", "BFS"]).pack(fill="x")
@@ -38,7 +41,9 @@ def build_interface(app):
     ttk.Combobox(frame, textvariable=app.order,
                  values=["asc", "desc"]).pack(fill="x")
 
-    tk.Button(frame, text="Run Search", command=lambda: run_search(app)).pack(fill="x", pady=5)
+    tk.Button(frame, text="Run Search", command=lambda: run_search(app)).pack(fill="x", pady=2)
+
+    tk.Button(frame, text='Clean', command=lambda: clean_view(app)).pack(fill="x", pady=2)
 
     node_ops = tk.LabelFrame(frame, text="Edit graph", labelanchor='n')
     node_ops.pack(fill="x", pady=10)
@@ -72,7 +77,7 @@ def build_interface(app):
     app.edge_v = tk.StringVar()
     tk.Entry(addEdge_row, textvariable=app.edge_u, width=5).pack(side="left", pady=2)
     tk.Entry(addEdge_row, textvariable=app.edge_v, width=5).pack(side="left", pady=2)
-    tk.Button(addEdge_row, text="~", command=lambda: add_edge(app)).pack(side="left", pady=2)
+    tk.Button(addEdge_row, text="~", command=lambda: add_edge(app)).pack(side="left", pady=5, padx=5)
 
     tk.Label(node_ops, text="Remove edge (node 1, node 2):").pack(fill="x", anchor="w", pady=2)
 
@@ -84,3 +89,7 @@ def build_interface(app):
     tk.Entry(delEdge_row, textvariable=app.del_edge_u, width=5).pack(side="left", pady=2)
     tk.Entry(delEdge_row, textvariable=app.del_edge_v, width=5).pack(side="left", pady=2)
     tk.Button(delEdge_row, text="-", command=lambda: remove_edge(app)).pack(side="left", pady=2)
+
+    tk.Button(node_ops, text="To default", command=lambda: restore_default(app)).pack(anchor="center",
+                                                                                               pady=10,
+                                                                                               padx=20)
