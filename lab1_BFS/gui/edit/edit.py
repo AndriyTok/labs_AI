@@ -17,7 +17,12 @@ def add_node(self):
 
 
 def remove_node(self):
-    node = self.del_node_var.get().strip()
+    try:
+        node = int(self.del_node_var.get().strip())
+    except ValueError:
+        messagebox.showerror("Error", "Invalid node identifier")
+        return
+
     if node in self.active_graph.nodes:
         self.active_graph.remove_node(node)
         self.positions.pop(node, None)
