@@ -1,16 +1,16 @@
 def dfs(graph, start, goal, order="asc"):
     stack = [[start]]
-    visited = set()  # Start empty
+    visited = set()
     visited_edges = []
+    stack_nodes = {start}  # Add this line to track stack nodes separately
 
     while stack:
         path = stack.pop()
         current = path[-1]
+        stack_nodes.remove(current)  # Remove from stack nodes when processing
 
-        # Add to visited only when processing
         visited.add(current)
 
-        # Goal check
         if current == goal:
             path_edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
             stats = {
@@ -22,19 +22,13 @@ def dfs(graph, start, goal, order="asc"):
             print(f"!!! Path length: {stats['path_length']} nodes")
             print(f"!!! Total nodes explored: {len(visited)}")
             print(f"!!! Search efficiency: {stats['path_length']}/{len(visited)} = {stats['efficiency']:.1f}%")
-            stack_nodes = [p[-1] for p in stack]
-            yield path, path_edges, visited_edges, stack_nodes, visited
+            yield path, path_edges, visited_edges, list(stack_nodes), visited
             return
 
-        # Get neighbors and sort them
         neighbors = sorted(graph[current], reverse=(order == "desc"))
-
-        # Current state visualization
         current_path_edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
-        stack_nodes = [p[-1] for p in stack]
-        yield path, current_path_edges, visited_edges, stack_nodes, visited
+        yield path, current_path_edges, visited_edges, list(stack_nodes), visited
 
-        # Process neighbors
         for neighbor in reversed(neighbors):
             if neighbor not in visited and neighbor not in stack_nodes:
                 if neighbor == goal:
@@ -51,14 +45,14 @@ def dfs(graph, start, goal, order="asc"):
                     print(f"!!! Path length: {stats['path_length']} nodes")
                     print(f"!!! Total nodes explored: {len(visited)}")
                     print(f"!!! Search efficiency: {stats['path_length']}/{len(visited)} = {stats['efficiency']:.1f}%")
-                    yield new_path, path_edges, visited_edges, stack_nodes, visited
+                    yield new_path, path_edges, visited_edges, list(stack_nodes), visited
                     return
 
                 visited_edges.append((current, neighbor))
                 new_path = path + [neighbor]
                 stack.append(new_path)
+                stack_nodes.add(neighbor)  # Add to stack nodes when pushing
 
     print("!!! No path found")
     print(f"!!! Total nodes explored: {len(visited)}")
-    stack_nodes = [p[-1] for p in stack]
-    yield [], [], visited_edges, stack_nodes, visited
+    yield [], [], visited_edges, list(stack_nodes), visited
