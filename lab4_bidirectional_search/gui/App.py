@@ -19,6 +19,5 @@ class BidirectionalSearchApp:
         self.main_interface = MainInterface(root, self.maze_data,
                                           self.grid, self.bidirectional_search)
 
-        # Генерація початкового лабіринту
-        self.maze_data.generate_random_maze()
+        # Відображаємо дефолтний лабіринт (БЕЗ генерації випадкового)
         self.main_interface.update_visualization()

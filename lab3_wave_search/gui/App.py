@@ -7,7 +7,7 @@ from lab3_wave_search.logic.algorithm.wave_search import WaveSearch
 class WaveAlgorithmApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Хвильовий алгоритм - Однонаправлений пошук")
+        self.root.title("Хвільовий алгоритм - Однонаправлений пошук")
         self.root.geometry("1200x800")
 
         # Ініціалізація компонентів
@@ -19,6 +19,5 @@ class WaveAlgorithmApp:
         self.main_interface = MainInterface(root, self.maze_data,
                                           self.grid, self.wave_search)
 
-        # Генерація початкового лабіринту
-        self.maze_data.generate_random_maze()
+        # Відображаємо дефолтний лабіринт (БЕЗ генерації випадкового)
         self.main_interface.update_visualization()
