@@ -60,7 +60,6 @@ class BidirectionalRunner:
         else:
             messagebox.showwarning("Увага", "Шлях не знайдено!")
 
-
     def run_search(self):
         """Запускає двонаправлений пошук"""
         operator = self.operator_var.get()
@@ -88,7 +87,7 @@ class BidirectionalRunner:
         self.show_results_window()
 
     def show_wave_matrices(self):
-        """Показує обидві хвильові матриці"""
+        """Показує обidві хвильові матриці"""
         if self.maze_data.forward_wave_matrix is not None:
             if hasattr(self.main_interface, 'maze_drawer'):
                 self.main_interface.maze_drawer.draw_bidirectional_waves()
@@ -120,7 +119,7 @@ class BidirectionalRunner:
 
         self.results_window = tk.Toplevel(self.main_interface.root)
         self.results_window.title("Результати двонаправленого пошуку")
-        self.results_window.geometry("700x600")
+        self.results_window.geometry("700x700")
 
         header_frame = ttk.Frame(self.results_window)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
@@ -156,6 +155,51 @@ class BidirectionalRunner:
                 results_text.insert(tk.END, f"   ✗ Шлях НЕ знайдено\n")
 
             results_text.insert(tk.END, "\n")
+
+        # Аналіз найкращих результатів
+        found_results = [r for r in self.results_data if r['found']]
+
+        if found_results:
+            results_text.insert(tk.END, "=" * 80 + "\n")
+            results_text.insert(tk.END, "АНАЛІЗ НАЙКРАЩИХ РЕЗУЛЬТАТІВ\n")
+            results_text.insert(tk.END, "=" * 80 + "\n\n")
+
+            # Найкоротший шлях
+            best_length = min(found_results, key=lambda r: r['length'])
+            results_text.insert(tk.END, "🏆 НАЙКОРОТШИЙ ШЛЯХ:\n")
+            results_text.insert(tk.END, f"   Оператор: {best_length['operator']}\n")
+            results_text.insert(tk.END, f"   Довжина: {best_length['length']} кроків\n")
+            results_text.insert(tk.END, f"   Циклів (прямий/зворотний/всього): "
+                                        f"{best_length['cycles_forward']}/{best_length['cycles_backward']}/"
+                                        f"{best_length['total_cycles']}\n")
+            results_text.insert(tk.END, f"   Час виконання: {best_length['time']:.4f} сек\n")
+            results_text.insert(tk.END, f"   Точка зустрічі: {best_length['meeting_point']}\n\n")
+
+            # Найшвидший
+            best_time = min(found_results, key=lambda r: r['time'])
+            results_text.insert(tk.END, "⚡ НАЙШВИДШЕ ВИКОНАННЯ:\n")
+            results_text.insert(tk.END, f"   Оператор: {best_time['operator']}\n")
+            results_text.insert(tk.END, f"   Час виконання: {best_time['time']:.4f} сек\n")
+            results_text.insert(tk.END, f"   Довжина шляху: {best_time['length']} кроків\n")
+            results_text.insert(tk.END, f"   Циклів (прямий/зворотний/всього): "
+                                        f"{best_time['cycles_forward']}/{best_time['cycles_backward']}/"
+                                        f"{best_time['total_cycles']}\n")
+            results_text.insert(tk.END, f"   Точка зустрічі: {best_time['meeting_point']}\n\n")
+
+            # Найменше циклів
+            best_cycles = min(found_results, key=lambda r: r['total_cycles'])
+            results_text.insert(tk.END, "🔄 НАЙМЕНШЕ ЦИКЛІВ:\n")
+            results_text.insert(tk.END, f"   Оператор: {best_cycles['operator']}\n")
+            results_text.insert(tk.END, f"   Всього циклів: {best_cycles['total_cycles']}\n")
+            results_text.insert(tk.END, f"   Циклів прямого пошуку: {best_cycles['cycles_forward']}\n")
+            results_text.insert(tk.END, f"   Циклів зворотного пошуку: {best_cycles['cycles_backward']}\n")
+            results_text.insert(tk.END, f"   Довжина шляху: {best_cycles['length']} кроків\n")
+            results_text.insert(tk.END, f"   Час виконання: {best_cycles['time']:.4f} сек\n")
+            results_text.insert(tk.END, f"   Точка зустрічі: {best_cycles['meeting_point']}\n\n")
+
+            results_text.insert(tk.END, "=" * 80 + "\n")
+        else:
+            results_text.insert(tk.END, "\nНемає успішних запусків для аналізу.\n")
 
         results_text.config(state=tk.DISABLED)
 
