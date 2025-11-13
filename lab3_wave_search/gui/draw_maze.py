@@ -150,5 +150,5 @@ class MazeDrawer:
             return [im]
 
         anim = animation.FuncAnimation(self.fig, update, frames=len(wave_steps),
-                                       interval=300, repeat=False, blit=False)
+                                       interval=100, repeat=False, blit=False)
         self.canvas.draw()

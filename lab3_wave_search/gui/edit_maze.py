@@ -40,7 +40,7 @@ class MazeEditor:
         ttk.Button(edit_frame, text="Застосувати розмір",
                    command=self.update_size).pack(fill=tk.X, pady=2)
 
-        ttk.Button(edit_frame, text="Генерувати випадковий",
+        ttk.Button(edit_frame, text="Генерувати новий лабіринт",
                    command=self.generate_random).pack(fill=tk.X, pady=2)
 
         ttk.Button(edit_frame, text="Очистити лабіринт",
