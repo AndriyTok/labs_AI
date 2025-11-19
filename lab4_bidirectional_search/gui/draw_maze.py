@@ -67,12 +67,18 @@ class MazeDrawer:
         self.canvas.draw()
 
     def draw_path(self, path):
-        """Малює шлях з точкою зустрічі"""
+        """Малює шлях з точкою зустрічі (якщо є)"""
         self.draw_maze()
 
-        if path and self.maze_data.meeting_point:
-            # Розділяємо шлях на дві частини через точку зустрічі
-            meeting_idx = path.index(self.maze_data.meeting_point)
+        if not path:
+            self.canvas.draw()
+            return
+
+        mp = self.maze_data.meeting_point
+
+        # Двонаправлена візуалізація тільки якщо є точка зустрічі І вона в шляху
+        if mp and mp in path:
+            meeting_idx = path.index(mp)
 
             # Прямий шлях
             forward_path = path[:meeting_idx + 1]
@@ -89,11 +95,10 @@ class MazeDrawer:
                 self.ax.plot(backward_y, backward_x, 'r-', linewidth=3, alpha=0.7, label='Зворотний шлях')
 
             # Точка зустрічі
-            meet_x, meet_y = self.maze_data.meeting_point
+            meet_x, meet_y = mp
             self.ax.plot(meet_y, meet_x, 'y*', markersize=20, label='Зустріч')
-
-        elif path:
-            # Звичайний шлях для однонаправленого пошуку
+        else:
+            # Однонаправлений шлях (зелений)
             path_x = [pos[0] for pos in path]
             path_y = [pos[1] for pos in path]
             self.ax.plot(path_y, path_x, 'g-', linewidth=3, alpha=0.7, label='Шлях')
@@ -192,11 +197,12 @@ class MazeDrawer:
         self.canvas.draw()
 
     def animate_bidirectional_search(self, combined_steps):
-        """Анімація двонаправленого пошуку з числами"""
+        """Анімація двонаправленого пошуку з числами та шляхом"""
         if not combined_steps:
             return
 
         self.ax.clear()
+        path = self.maze_data.current_path if hasattr(self.maze_data, 'current_path') else []
 
         def update(frame):
             self.ax.clear()
@@ -219,6 +225,26 @@ class MazeDrawer:
             backward_wave[backward_wave == -1] = np.nan
             self.ax.imshow(backward_wave, cmap='Reds', alpha=0.4)
 
+            # Малюємо шлях на останньому кадрі
+            if path and frame == len(combined_steps) - 1:
+                mp = self.maze_data.meeting_point
+                if mp and mp in path:
+                    meeting_idx = path.index(mp)
+
+                    # Прямий шлях
+                    forward_path = path[:meeting_idx + 1]
+                    if len(forward_path) > 1:
+                        forward_x = [pos[0] for pos in forward_path]
+                        forward_y = [pos[1] for pos in forward_path]
+                        self.ax.plot(forward_y, forward_x, 'b-', linewidth=3, alpha=0.7)
+
+                    # Зворотний шлях
+                    backward_path = path[meeting_idx:]
+                    if len(backward_path) > 1:
+                        backward_x = [pos[0] for pos in backward_path]
+                        backward_y = [pos[1] for pos in backward_path]
+                        self.ax.plot(backward_y, backward_x, 'r-', linewidth=3, alpha=0.7)
+
             # Додавання чисел
             for i in range(self.maze_data.size):
                 for j in range(self.maze_data.cols):
@@ -238,7 +264,7 @@ class MazeDrawer:
             self.ax.plot(start_y, start_x, 'go', markersize=12, label='Початок')
             self.ax.plot(end_y, end_x, 'ro', markersize=12, label='Кінець')
 
-            # Точка зустрічі
+            # Точка зустрічі на останньому кадрі
             if self.maze_data.meeting_point and frame == len(combined_steps) - 1:
                 meet_x, meet_y = self.maze_data.meeting_point
                 self.ax.plot(meet_y, meet_x, 'y*', markersize=20, label='Зустріч')
@@ -253,15 +279,16 @@ class MazeDrawer:
             return [self.ax]
 
         anim = animation.FuncAnimation(self.fig, update, frames=len(combined_steps),
-                                       interval=100, repeat=False, blit=False)
+                                       interval=200, repeat=False, blit=False)
         self.canvas.draw()
 
     def animate_unidirectional_search(self, wave_steps):
-        """Анімація однонаправленого пошуку з числами"""
+        """Анімація однонаправленого пошуку з числами та шляхом"""
         if not wave_steps:
             return
 
         self.ax.clear()
+        path = self.maze_data.current_path if hasattr(self.maze_data, 'current_path') else []
 
         def update(frame):
             self.ax.clear()
@@ -275,6 +302,12 @@ class MazeDrawer:
             current_wave = wave_steps[frame].copy().astype(float)
             current_wave[current_wave == -1] = np.nan
             self.ax.imshow(current_wave, cmap='Greens', alpha=0.6)
+
+            # Малюємо шлях на останньому кадрі
+            if path and frame == len(wave_steps) - 1:
+                path_x = [pos[0] for pos in path]
+                path_y = [pos[1] for pos in path]
+                self.ax.plot(path_y, path_x, 'g-', linewidth=3, alpha=0.9)
 
             # Додавання чисел
             for i in range(self.maze_data.size):
@@ -299,7 +332,7 @@ class MazeDrawer:
             return [self.ax]
 
         anim = animation.FuncAnimation(self.fig, update, frames=len(wave_steps),
-                                       interval=100, repeat=False, blit=False)
+                                       interval=200, repeat=False, blit=False)
         self.canvas.draw()
 
     def reset_visualization(self):

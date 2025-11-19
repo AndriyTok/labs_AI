@@ -121,11 +121,13 @@ class BidirectionalSearch:
         path = self._reconstruct_path(forward_wave, backward_wave, operator_type, meeting_point)
         search_time = time.time() - start_time
 
+        cycle_choice = cycles_forward if (cycles_forward > cycles_backward) else cycles_backward
+
         self.search_stats = {
             'path': path,
             'cycles_forward': cycles_forward,
             'cycles_backward': cycles_backward,
-            'total_cycles': cycles_forward + cycles_backward,
+            'total_cycles': cycle_choice,
             'time': search_time,
             'length': len(path) if path else 0,
             'operator': operator_type,

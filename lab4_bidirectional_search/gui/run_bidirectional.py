@@ -130,20 +130,27 @@ class BidirectionalRunner:
         """Двонаправлений пошук"""
         path, cycles_f, cycles_b, search_time, meeting = self.bidirectional_search.search(operator)
 
+        cycles_final = max(cycles_f, cycles_b)  # ⬅️ Вже правильно використовуєте max
+
         if path:
             self.main_interface.show_path(path)
             messagebox.showinfo("Результат",
                                 f"Шлях знайдено!\n"
-                                f"Довжина: {len(path)} кроків\n"
-                                f"Циклів прямого: {cycles_f}\n"
-                                f"Циклів зворотного: {cycles_b}\n"
-                                f"Всього циклів: {cycles_f + cycles_b}\n"
-                                f"Час: {search_time:.4f} сек")
+                                f"Довжина: {len(path)}\n"
+                                f"Циклів (прямо): {cycles_f}\n"
+                                f"Циклів (назад): {cycles_b}\n"
+                                f"Загальна кількість циклів: {cycles_final}\n"
+                                f"Час: {search_time:.4f} с")
         else:
             messagebox.showwarning("Результат", "Шлях НЕ знайдено!")
 
     def _run_unidirectional_search(self, operator):
         """Однонаправлений пошук"""
+        # Скидаємо артефакти двонаправленого пошуку
+        self.maze_data.meeting_point = None
+        self.maze_data.forward_wave_matrix = None
+        self.maze_data.backward_wave_matrix = None
+
         from lab4_bidirectional_search.logic.algorithm.unidirectional_search import UnidirectionalSearch
 
         uni_search = UnidirectionalSearch(self.maze_data, self.bidirectional_search.grid)
@@ -155,13 +162,13 @@ class BidirectionalRunner:
             messagebox.showinfo("Результат",
                                 f"Шлях знайдено!\n"
                                 f"Довжина: {len(path)} кроків\n"
-                                f"Циклів: {cycles}\n"
+                                f"Циклів: {cycles - 1}\n"
                                 f"Час: {search_time:.4f} сек")
         else:
             messagebox.showwarning("Результат", "Шлях НЕ знайдено!")
 
     def research_all(self):
-        """Досліджує всі оператори для обраного методу"""
+        """Досліджує всі оператори"""
         self.results_data = []
         method = self.search_method_var.get()
 
@@ -170,13 +177,35 @@ class BidirectionalRunner:
 
             if method == "Двонаправлений":
                 path, cycles_f, cycles_b, search_time, meeting = self.bidirectional_search.search(operator)
-                self.add_result(operator, path, cycles_f, cycles_b, search_time, meeting, method)
+
+                self.results_data.append({
+                    'method': method,
+                    'operator': operator,
+                    'path': path,
+                    'length': len(path) if path else 0,
+                    'cycles_forward': cycles_f,
+                    'cycles_backward': cycles_b,
+                    'cycles': max(cycles_f, cycles_b),  # ⬅️ Зберігаємо максимум
+                    'time': search_time,
+                    'meeting_point': meeting
+                })
             else:
                 from lab4_bidirectional_search.logic.algorithm.unidirectional_search import UnidirectionalSearch
                 uni_search = UnidirectionalSearch(self.maze_data, self.bidirectional_search.grid)
                 path, cycles, search_time = uni_search.search(operator)
-                self.add_result(operator, path, cycles, 0, search_time, None, method)
 
+                self.results_data.append({
+                    'method': method,
+                    'operator': operator,
+                    'path': path,
+                    'length': len(path) if path else 0,
+                    'cycles': cycles,
+                    'time': search_time
+                })
+
+        messagebox.showinfo("Завершено",
+                            f"Дослідження завершено!\n"
+                            f"Протестовано операторів: {len(OperatorType)}")
         self.show_results_window()
 
     def compare_methods(self):
@@ -187,6 +216,7 @@ class BidirectionalRunner:
 
         # Двонаправлений пошук
         bi_path, bi_cycles_f, bi_cycles_b, bi_time, bi_meeting = self.bidirectional_search.search(operator)
+        bi_total_cycles = max(bi_cycles_f, bi_cycles_b)  # ⬅️ Максимум, а не сума
 
         # Однонаправлений пошук
         uni_search = UnidirectionalSearch(self.maze_data, self.bidirectional_search.grid)
@@ -194,7 +224,7 @@ class BidirectionalRunner:
 
         # Показуємо результати порівняння
         self.show_comparison_results(operator,
-                                     (bi_path, bi_cycles_f + bi_cycles_b, bi_time, bi_meeting),
+                                     (bi_path, bi_total_cycles, bi_time, bi_meeting),
                                      (uni_path, uni_cycles, uni_time))
 
     def show_comparison_results(self, operator, bidirectional_result, unidirectional_result):
@@ -276,121 +306,53 @@ class BidirectionalRunner:
         })
 
     def show_results_window(self):
-        """Показує окреме вікно з результатами"""
+        """Показує вікно з результатами досліджень"""
         if not self.results_data:
-            messagebox.showinfo("Інформація", "Немає результатів")
+            messagebox.showinfo("Інформація", "Спочатку виконайте дослідження операторів")
             return
 
-        if self.results_window and tk.Toplevel.winfo_exists(self.results_window):
-            self.results_window.destroy()
+        if self.results_window is not None and tk.Toplevel.winfo_exists(self.results_window):
+            self.results_window.lift()
+            return
 
-        self.results_window = tk.Toplevel(self.main_interface.root)
-        self.results_window.title("Результати пошуку")
-        self.results_window.geometry("700x700")
+        self.results_window = tk.Toplevel(self.parent_frame)
+        self.results_window.title("Результати досліджень")
+        self.results_window.geometry("900x400")
 
-        header_frame = ttk.Frame(self.results_window)
-        header_frame.pack(fill=tk.X, padx=10, pady=10)
+        # Таблиця результатів
+        columns = ("Метод", "Оператор", "Довжина шляху", "Циклів", "Час (с)")
+        tree = ttk.Treeview(self.results_window, columns=columns, show='headings')
 
-        method = self.results_data[0]['method'] if self.results_data else "Невідомо"
-        ttk.Label(header_frame, text=f"РЕЗУЛЬТАТИ {method.upper()} ПОШУКУ",
-                  font=('Arial', 14, 'bold')).pack()
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=150)
 
-        text_frame = ttk.Frame(self.results_window)
-        text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        # Заповнення даних
+        for result in self.results_data:
+            method = result.get('method', 'Невідомо')
+            operator = result.get('operator', 'Невідомо')
+            length = result.get('length', 0)
 
-        scrollbar = ttk.Scrollbar(text_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        results_text = tk.Text(text_frame, yscrollcommand=scrollbar.set,
-                               font=('Courier', 10), wrap=tk.WORD)
-        results_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.config(command=results_text.yview)
-
-        results_text.insert(tk.END, "=" * 80 + "\n")
-
-        for i, result in enumerate(self.results_data, 1):
-            results_text.insert(tk.END, f"\n{i}. Оператор: {result['operator']}\n")
-            results_text.insert(tk.END, "-" * 80 + "\n")
-
-            if result['found']:
-                results_text.insert(tk.END, f"   ✓ Шлях знайдено\n")
-                results_text.insert(tk.END, f"   Довжина шляху: {result['length']} кроків\n")
-
-                if result['method'] == "Двонаправлений":
-                    results_text.insert(tk.END, f"   Циклів прямого пошуку: {result['cycles_forward']}\n")
-                    results_text.insert(tk.END, f"   Циклів зворотного пошуку: {result['cycles_backward']}\n")
-                    results_text.insert(tk.END, f"   Всього циклів: {result['total_cycles']}\n")
-                    results_text.insert(tk.END, f"   Точка зустрічі: {result['meeting_point']}\n")
-                else:
-                    results_text.insert(tk.END, f"   Циклів: {result['cycles_forward']}\n")
-
-                results_text.insert(tk.END, f"   Час пошуку: {result['time']:.4f} сек\n")
+            # Правильне визначення циклів в залежності від методу
+            if method == "Двонаправлений":
+                cycles_f = result.get('cycles_forward', 0)
+                cycles_b = result.get('cycles_backward', 0)
+                cycles = max(cycles_f, cycles_b)  # ⬅️ Максимум замість суми
             else:
-                results_text.insert(tk.END, f"   ✗ Шлях НЕ знайдено\n")
+                cycles = result.get('cycles', 0)
 
-            results_text.insert(tk.END, "\n")
+            time_val = result.get('time', 0)
 
-        # Аналіз найкращих результатів
-        found_results = [r for r in self.results_data if r['found']]
+            tree.insert('', tk.END, values=(
+                method,
+                operator,
+                length,
+                cycles,
+                f"{time_val:.4f}"
+            ))
 
-        if found_results:
-            results_text.insert(tk.END, "=" * 80 + "\n")
-            results_text.insert(tk.END, "АНАЛІЗ НАЙКРАЩИХ РЕЗУЛЬТАТІВ\n")
-            results_text.insert(tk.END, "=" * 80 + "\n\n")
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-            # Найкоротший шлях
-            best_length = min(found_results, key=lambda r: r['length'])
-            results_text.insert(tk.END, "🏆 НАЙКОРОТШИЙ ШЛЯХ:\n")
-            results_text.insert(tk.END, f"   Оператор: {best_length['operator']}\n")
-            results_text.insert(tk.END, f"   Довжина: {best_length['length']} кроків\n")
-
-            if best_length['method'] == "Двонаправлений":
-                results_text.insert(tk.END, f"   Циклів (прямий/зворотний/всього): "
-                                            f"{best_length['cycles_forward']}/{best_length['cycles_backward']}/"
-                                            f"{best_length['total_cycles']}\n")
-                results_text.insert(tk.END, f"   Точка зустрічі: {best_length['meeting_point']}\n")
-            else:
-                results_text.insert(tk.END, f"   Циклів: {best_length['cycles_forward']}\n")
-
-            results_text.insert(tk.END, f"   Час виконання: {best_length['time']:.4f} сек\n\n")
-
-            # Найшвидший
-            best_time = min(found_results, key=lambda r: r['time'])
-            results_text.insert(tk.END, "⚡ НАЙШВИДШЕ ВИКОНАННЯ:\n")
-            results_text.insert(tk.END, f"   Оператор: {best_time['operator']}\n")
-            results_text.insert(tk.END, f"   Час виконання: {best_time['time']:.4f} сек\n")
-            results_text.insert(tk.END, f"   Довжина шляху: {best_time['length']} кроків\n")
-
-            if best_time['method'] == "Двонаправлений":
-                results_text.insert(tk.END, f"   Циклів (прямий/зворотний/всього): "
-                                            f"{best_time['cycles_forward']}/{best_time['cycles_backward']}/"
-                                            f"{best_time['total_cycles']}\n")
-                results_text.insert(tk.END, f"   Точка зустрічі: {best_time['meeting_point']}\n\n")
-            else:
-                results_text.insert(tk.END, f"   Циклів: {best_time['cycles_forward']}\n\n")
-
-            # Найменше циклів
-            best_cycles = min(found_results, key=lambda r: r['total_cycles'] if r['method'] == "Двонаправлений" else r[
-                'cycles_forward'])
-            results_text.insert(tk.END, "🔄 НАЙМЕНШЕ ЦИКЛІВ:\n")
-            results_text.insert(tk.END, f"   Оператор: {best_cycles['operator']}\n")
-
-            if best_cycles['method'] == "Двонаправлений":
-                results_text.insert(tk.END, f"   Всього циклів: {best_cycles['total_cycles']}\n")
-                results_text.insert(tk.END, f"   Циклів прямого пошуку: {best_cycles['cycles_forward']}\n")
-                results_text.insert(tk.END, f"   Циклів зворотного пошуку: {best_cycles['cycles_backward']}\n")
-                results_text.insert(tk.END, f"   Точка зустрічі: {best_cycles['meeting_point']}\n")
-            else:
-                results_text.insert(tk.END, f"   Циклів: {best_cycles['cycles_forward']}\n")
-
-            results_text.insert(tk.END, f"   Довжина шляху: {best_cycles['length']} кроків\n")
-            results_text.insert(tk.END, f"   Час виконання: {best_cycles['time']:.4f} сек\n\n")
-
-            results_text.insert(tk.END, "=" * 80 + "\n")
-        else:
-            results_text.insert(tk.END, "\nНемає успішних запусків для аналізу.\n")
-
-        results_text.config(state=tk.DISABLED)
-
+        # Кнопка закриття
         ttk.Button(self.results_window, text="Закрити",
-                   command=self.results_window.destroy).pack(pady=10)
+                   command=self.results_window.destroy).pack(pady=5)
