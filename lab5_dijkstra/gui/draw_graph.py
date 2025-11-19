@@ -87,38 +87,41 @@ class GraphDrawer:
     def _animation_step(self):
         """Малює один кадр анімації та планує наступний"""
 
-        # Перевірка, чи анімація не закінчилась
         if self.animation_frame_index >= len(self.animation_steps):
             self.animation_steps = []
             self.animation_job = None
-            # Можна додати self.draw_graph() тут, якщо хочете
-            # повернути фінальний вигляд після анімації
             return
 
-            # Отримуємо дані для поточного кадру
         frame_data = self.animation_steps[self.animation_frame_index]
         visited_nodes, distances, current_node, neighbors = frame_data
 
-        # --- Логіка малювання (та сама, що була в 'update') ---
         self.ax.clear()
         g = self.graph_data.graph
 
-        # Кольори
+        # Малюємо базові ребра
+        nx.draw_networkx_edges(g, self.pos, ax=self.ax, alpha=0.3)
+
+        # ДОДАНО: Малюємо шлях поверх анімації (якщо є)
+        if self.current_path_edges:
+            nx.draw_networkx_edges(g, self.pos, ax=self.ax,
+                                   edgelist=self.current_path_edges,
+                                   edge_color='red', width=3, alpha=0.7)
+
+        # Кольори вузлів
         node_colors = []
         for node in g.nodes:
             if node == current_node:
-                node_colors.append('orange')  # Поточний
+                node_colors.append('orange')
             elif node in visited_nodes:
-                node_colors.append('gray')  # Відвіданий
+                node_colors.append('gray')
             elif node in neighbors:
-                node_colors.append('yellow')  # Перевіряється
+                node_colors.append('yellow')
             else:
-                node_colors.append('lightblue')  # Базовий
+                node_colors.append('lightblue')
 
-        # Малюємо
-        nx.draw_networkx_nodes(g, self.pos, ax=self.ax, nodelist=list(g.nodes), node_color=node_colors, node_size=700)
+        nx.draw_networkx_nodes(g, self.pos, ax=self.ax, nodelist=list(g.nodes),
+                               node_color=node_colors, node_size=700)
         nx.draw_networkx_labels(g, self.pos, ax=self.ax, font_size=8)
-        nx.draw_networkx_edges(g, self.pos, ax=self.ax, alpha=0.3)
 
         # Відстані
         dist_labels = {}
@@ -128,19 +131,14 @@ class GraphDrawer:
                 dist_labels[node] = f"{dist:.0f}"
 
         label_pos = {k: (v[0], v[1] - 0.2) for k, v in self.pos.items()}
-        nx.draw_networkx_labels(g, label_pos, ax=self.ax, labels=dist_labels, font_size=7, font_color='purple')
+        nx.draw_networkx_labels(g, label_pos, ax=self.ax, labels=dist_labels,
+                                font_size=7, font_color='purple')
 
         self.ax.set_title(f"Крок {self.animation_frame_index + 1}/{len(self.animation_steps)}. Обробка: {current_node}")
         self.ax.axis('on')
         self.ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
 
-        # Оновлюємо полотно
         self.canvas.draw()
 
-        # --- Кінець логіки малювання ---
-
-        # Готуємо наступний кадр
         self.animation_frame_index += 1
-
-        # Плануємо виклик цієї ж функції через 400мс
         self.animation_job = self.parent_frame.after(400, self._animation_step)

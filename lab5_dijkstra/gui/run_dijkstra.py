@@ -71,7 +71,7 @@ class DijkstraRunner:
                 for visited, dists, curr, neighs in steps:
                     safe_steps.append((
                         set(str(v) for v in visited),
-                        {str(k): float(v) if v != float('inf') else 9999999 for k, v in dists.items()},
+                        {str(k): float(v) if v != float('inf') else 0 for k, v in dists.items()},
                         str(curr),
                         [str(n) for n in neighs]
                     ))
@@ -92,6 +92,9 @@ class DijkstraRunner:
             messagebox.showwarning("Помилка", "Не вдалося запустити анімацію.")
             self._set_buttons_state("normal")
             return
+
+        # ДОДАНО: Показуємо шлях перед анімацією
+        self.main_interface.show_path(path)
 
         self.main_interface.graph_drawer.animate_search(steps)
         self.show_results_window(path, distance, len(steps))
