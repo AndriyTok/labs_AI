@@ -37,7 +37,7 @@ class GraphEditor:
         """Додає місто з координатами"""
         dialog = tk.Toplevel(self.parent_frame)
         dialog.title("Додати місто")
-        dialog.geometry("300x200")
+        dialog.geometry("300x250")  # Збільшено висоту
 
         ttk.Label(dialog, text="Назва міста:").pack(padx=10, pady=5)
         name_var = tk.StringVar()
@@ -73,6 +73,7 @@ class GraphEditor:
 
         ttk.Button(dialog, text="Додати", command=on_ok).pack(pady=10)
         dialog.transient(self.parent_frame)
+        dialog.grab_set()  # Блокує головне вікно
 
     def remove_city(self):
         city = self.remove_city_var.get()

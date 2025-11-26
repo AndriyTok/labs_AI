@@ -164,3 +164,11 @@ class GraphData:
             self.graph.remove_edge(city1, city2)
             return True
         return False
+
+    def add_city_with_coords(self, city_name, lon, lat):
+        """Додає нове місто з координатами"""
+        if city_name and city_name not in self.graph:
+            self.graph.add_node(city_name)
+            CITY_COORDINATES[city_name] = (lon, lat)
+            return True
+        return False

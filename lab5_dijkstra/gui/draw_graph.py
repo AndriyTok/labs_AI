@@ -88,6 +88,55 @@ class GraphDrawer:
         """Малює один кадр анімації та планує наступний"""
 
         if self.animation_frame_index >= len(self.animation_steps):
+            # ДОДАНО: В кінці анімації показуємо шлях червоним
+            if self.current_path_edges:
+                self.ax.clear()
+                g = self.graph_data.graph
+
+                # Отримуємо останній кадр для збереження кольорів
+                last_frame = self.animation_steps[-1]
+                visited_nodes, _, _, _ = last_frame
+
+                # Малюємо базові ребра
+                nx.draw_networkx_edges(g, self.pos, ax=self.ax, alpha=0.3)
+
+                # Виділяємо шлях червоним
+                nx.draw_networkx_edges(g, self.pos, ax=self.ax,
+                                       edgelist=self.current_path_edges,
+                                       edge_color='red', width=3)
+
+                # Вузли шляху червоним, решта зберігають колір з анімації
+                path_nodes = list(set([u for u, v in self.current_path_edges] +
+                                      [v for u, v in self.current_path_edges]))
+
+                node_colors = []
+                for node in g.nodes:
+                    if node in path_nodes:
+                        node_colors.append('#FF6347')  # Червоний для шляху
+                    elif node in visited_nodes:
+                        node_colors.append('gray')  # Сірий для відвіданих
+                    else:
+                        node_colors.append('lightblue')  # Синій для невідвіданих
+
+                nx.draw_networkx_nodes(g, self.pos, ax=self.ax,
+                                       nodelist=list(g.nodes),
+                                       node_color=node_colors, node_size=700)
+
+                # Підписи міст (білим для контрасту з червоними вузлами)
+                nx.draw_networkx_labels(g, self.pos, ax=self.ax,
+                                        font_size=8, font_color='black')
+
+                # Ваги ребер
+                edge_labels = nx.get_edge_attributes(g, 'weight')
+                nx.draw_networkx_edge_labels(g, self.pos, ax=self.ax,
+                                             edge_labels=edge_labels, font_size=8,
+                                             bbox=dict(alpha=0, ec='none'))
+
+                self.ax.set_title("✅ Найкоротший шлях знайдено")
+                self.ax.axis('on')
+                self.ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
+                self.canvas.draw()
+
             self.animation_steps = []
             self.animation_job = None
             return
@@ -101,13 +150,13 @@ class GraphDrawer:
         # Малюємо базові ребра
         nx.draw_networkx_edges(g, self.pos, ax=self.ax, alpha=0.3)
 
-        # ДОДАНО: Малюємо шлях поверх анімації (якщо є)
+        # Малюємо шлях поверх анімації (якщо є)
         if self.current_path_edges:
             nx.draw_networkx_edges(g, self.pos, ax=self.ax,
                                    edgelist=self.current_path_edges,
                                    edge_color='red', width=3, alpha=0.7)
 
-        # Кольори вузлів
+        # Кольори вузлів під час анімації
         node_colors = []
         for node in g.nodes:
             if node == current_node:
@@ -121,9 +170,12 @@ class GraphDrawer:
 
         nx.draw_networkx_nodes(g, self.pos, ax=self.ax, nodelist=list(g.nodes),
                                node_color=node_colors, node_size=700)
-        nx.draw_networkx_labels(g, self.pos, ax=self.ax, font_size=8)
 
-        # Відстані
+        # Підписи міст (чорним для контрасту)
+        nx.draw_networkx_labels(g, self.pos, ax=self.ax,
+                                font_size=8, font_color='black')
+
+        # Відстані (синім кольором для видимості)
         dist_labels = {}
         for node, (x, y) in self.pos.items():
             dist = distances.get(node, float('inf'))
@@ -132,7 +184,7 @@ class GraphDrawer:
 
         label_pos = {k: (v[0], v[1] - 0.2) for k, v in self.pos.items()}
         nx.draw_networkx_labels(g, label_pos, ax=self.ax, labels=dist_labels,
-                                font_size=7, font_color='purple')
+                                font_size=7, font_color='blue')
 
         self.ax.set_title(f"Крок {self.animation_frame_index + 1}/{len(self.animation_steps)}. Обробка: {current_node}")
         self.ax.axis('on')
